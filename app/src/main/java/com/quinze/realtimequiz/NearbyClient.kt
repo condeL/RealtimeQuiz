@@ -138,7 +138,7 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
                                 )
                                 .padding(horizontal = 16.dp)
                         },
-                        verticalAlignment = Alignment.CenterVertically
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         if(mcq){
                             Checkbox(
@@ -178,7 +178,12 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
             clientViewModel.mConnectionsClient.sendPayload(clientViewModel.hostID, bytesPayload)
         }) {
             Text("SEND ANSWER")
-
+            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+            Icon(
+                Icons.Filled.Send,
+                contentDescription = null,
+                modifier = Modifier.padding(vertical = 10.dp)
+            )
         }
     }
     @Composable

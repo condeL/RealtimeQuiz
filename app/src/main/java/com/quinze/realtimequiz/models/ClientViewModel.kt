@@ -40,6 +40,7 @@ class ClientViewModel(connectionsClient: ConnectionsClient): ViewModel() {
     override fun onCleared() {
         super.onCleared()
         mConnectionsClient.stopDiscovery()
+        mConnectionsClient.stopAllEndpoints()
     }
 
     fun startDiscovery() {
@@ -107,7 +108,7 @@ class ClientViewModel(connectionsClient: ConnectionsClient): ViewModel() {
                 // sent or received.
                 Log.d("Nearby Connection: ", "Lost: $endpointId")
                 connected = false
-
+                startDiscovery()
             }
         }
 

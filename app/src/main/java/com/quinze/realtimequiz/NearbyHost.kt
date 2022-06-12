@@ -11,6 +11,8 @@ import androidx.compose.runtime.*
 
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.gms.nearby.connection.*
@@ -43,34 +45,44 @@ class NearbyHost() {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             if(connected) {
-                ShowParticipants(players)
+                ShowParticipants(players, hostViewModel.winner)
             }
-            Card() {
-                Column(
-                    Modifier.padding(all = 16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+            if (!connected) {
 
-                    if (!connected) {
+                Card() {
+                    Column(
+                        Modifier.padding(all = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+
                         Text(text = "Connecting...")
                         hostViewModel.startAdvertising()
-                    } else {
-                        /*if(players.size<1){
+                    }
+                }
+            }else {
+                /*if(players.size<1){
                             Text(text = "Waiting for players...")
-                        }else {*/
-                            if(!hostViewModel.answering)
-                            ShowQuestionField(players,hostViewModel)
-                        else
-                            ShowWinner()
-                        }
-                    //}
+                        }else {
+                         */
+                Card(modifier = Modifier.padding(horizontal = 24.dp).fillMaxWidth()) {
+                    Column(
+                        Modifier.padding(all = 32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        //if (!hostViewModel.answering)
+                        ShowQuestionField(players, hostViewModel)
+                        /*else
+                            ShowWinner(hostViewModel)*/
+                    }
                 }
             }
         }
     }
 
+
+
     @Composable
-    fun ShowParticipants(players: Map<String, String>){
+    fun ShowParticipants(players: Map<String, String>, winnerID: String){
         Card() {
             Column(
                 Modifier.padding(all = 16.dp),
@@ -78,10 +90,11 @@ class NearbyHost() {
             ) {
                 Text(text = "Participants: ${players.size}")
                 players.forEach { player ->
+                    val winner = player.key == winnerID
                     Row() {
-                        Text(text = player.key)
+                        Text(text = player.key,  color = if (winner) Color.Green else Color.Unspecified)
                         Spacer(Modifier.width(56.dp))
-                        Text(text = player.value)
+                        Text(text = player.value, color = if (winner) Color.Green else Color.Unspecified)
                     }
                 }
             }
@@ -102,88 +115,90 @@ class NearbyHost() {
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             OutlinedTextField(
+                modifier = Modifier.fillMaxWidth(),
                 value = problem,
                 onValueChange = { hostViewModel.problem = it },
-                label = { Text("Question") })
-            Row(){
+                label = { Text("Question") },
+                enabled = !hostViewModel.answering
+            )
+            Row(verticalAlignment = Alignment.CenterVertically){
                 Switch(
                     checked = hostViewModel.mcq,
-                    onCheckedChange = { hostViewModel.mcq = it }
+                    onCheckedChange = { hostViewModel.mcq = it },
+                    enabled = !hostViewModel.answering
+
                 )
                 Text(text="Multiple choice?")
             }
             for(i in 0..3){
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(56.dp)
-                        .padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     if(hostViewModel.mcq){
                         Checkbox(
                             checked = hostViewModel.truths[i],
                             onCheckedChange = { hostViewModel.truths[i] = it },
+                            enabled = !hostViewModel.answering
                         )
                     }else {
                         RadioButton(
                             selected = (truth[i] == selectedOption),
                             onClick = { onOptionSelected(truth[i]) },
+                            enabled = !hostViewModel.answering
                         )
                     }
                     OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
                         value = hostViewModel.answers[i],
                         onValueChange = { hostViewModel.answers[i] = it },
-                        label = { Text("Answer ${truth[i]}")}
+                        label = { Text("Answer ${truth[i]}")},
+                        singleLine = true,
+                        enabled = !hostViewModel.answering
                     )
-
                 }
             }
-            Button(modifier = Modifier.padding(top = 5.dp),onClick = {
-                if(!hostViewModel.mcq){
-                    hostViewModel.truths.replaceAll( {false}  )
-                    hostViewModel.truths[selectedOption]=true
-                }
-                /*val question = Question(problem = hostViewModel.problem,
-                    answers = hostViewModel.answers,
-                    truths =  hostViewModel.truths,
-                    multipleChoice = hostViewModel.mcq
-                )*/
 
-                hostViewModel.answering=true
-                hostViewModel.calculateNbCorrectAnswers()
+            Spacer(Modifier.height(28.dp))
 
-                val game = GameState(
-                    answering = hostViewModel.answering,
-                    problem = hostViewModel.problem,
-                    answers = hostViewModel.answers,
-                    mcq = hostViewModel.mcq,
-                    winner = hostViewModel.winner,
-                    hostName = hostViewModel.hostName,
-                    players = hostViewModel.players
-                )
-                val jsonGame = Gson().toJson(game)
-                val bytesPayload = Payload.fromBytes(jsonGame.encodeToByteArray())
 
-                //val bytesPayload = Payload.fromBytes(question.encodeToByteArray())
-                hostViewModel.mConnectionsClient.sendPayload(players.keys.toList(), bytesPayload)
-            }) {
+            Button(modifier = Modifier.padding(top = 5.dp), enabled = !hostViewModel.answering
+                ,onClick = {
+                    if(!hostViewModel.mcq){
+                        hostViewModel.truths.replaceAll( {false}  )
+                        hostViewModel.truths[selectedOption]=true
+                    }
+                    /*val question = Question(problem = hostViewModel.problem,
+                        answers = hostViewModel.answers,
+                        truths =  hostViewModel.truths,
+                        multipleChoice = hostViewModel.mcq
+                    )*/
+
+                    hostViewModel.answering=true
+                    hostViewModel.calculateNbCorrectAnswers()
+                    hostViewModel.winner=""
+
+                    val game = GameState(
+                        answering = hostViewModel.answering,
+                        problem = hostViewModel.problem,
+                        answers = hostViewModel.answers,
+                        mcq = hostViewModel.mcq,
+                        winner = hostViewModel.players[hostViewModel.winner]?:"",
+                        hostName = hostViewModel.hostName,
+                        players = hostViewModel.players
+                    )
+                    val jsonGame = Gson().toJson(game)
+                    val bytesPayload = Payload.fromBytes(jsonGame.encodeToByteArray())
+
+                    //val bytesPayload = Payload.fromBytes(question.encodeToByteArray())
+                    hostViewModel.mConnectionsClient.sendPayload(players.keys.toList(), bytesPayload)
+                }) {
+                Text(text="SEND QUESTION")
+                Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                 Icon(
                     Icons.Filled.Send,
                     contentDescription = null,
                     modifier = Modifier.padding(vertical = 10.dp)
                 )
-                Text(text="SEND QUESTION")
-
             }
 
         }
-
     }
-
-    @Composable
-    fun ShowWinner(){
-
-    }
-
 }

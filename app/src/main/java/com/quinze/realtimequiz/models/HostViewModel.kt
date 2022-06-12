@@ -48,6 +48,7 @@ class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
     override fun onCleared() {
         super.onCleared()
         mConnectionsClient.stopAdvertising()
+        mConnectionsClient.stopAllEndpoints()
     }
 
     fun calculateNbCorrectAnswers() {
@@ -107,7 +108,6 @@ class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
                 when (result.status.statusCode) {
                     ConnectionsStatusCodes.STATUS_OK -> {
                         Log.d("Nearby Connection: ", "OK!")
-                        players[endpointId] = " "
                     }
                     ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED -> {
                         Log.d("Nearby Connection: ", "Rejected")
@@ -139,11 +139,13 @@ class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
                     val receivedBytes = payload.asBytes()
                     val jsonMove = String(receivedBytes!!)
                     val move = Gson().fromJson(jsonMove, GameMove::class.java)
-                    players[endpointId] = move.playerName
 
-                    if(answering){
-                        evaluateMove(move)
+                    if(answering && players.containsKey(endpointId)){
+                        evaluateMove(move, endpointId)
+                    } else{
+                        players[endpointId] = move.playerName
                     }
+
                     val game = if(answering){
 
                         GameState(
@@ -151,7 +153,7 @@ class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
                             problem = problem,
                             answers = answers,
                             mcq = mcq,
-                            winner = winner,
+                            winner = "",
                             hostName = hostName,
                             players = players
                         )} else{
@@ -160,7 +162,7 @@ class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
                             problem = problem,
                             answers = answers,
                             mcq = mcq,
-                            winner = winner,
+                            winner = players[winner]?:"",
                             hostName = hostName,
                             players = players
                         )
@@ -182,12 +184,12 @@ class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
             }
         }
 
-    fun evaluateMove(move: GameMove){
+    fun evaluateMove(move: GameMove, playerID: String){
         if (!mcq) {
             if (truths[move.answer[0]]) {
                 //correct answer
                 answering = false
-                winner = move.playerName
+                winner = playerID
             } else {
                 //messageResId = R.string.incorrect_toast
             }
@@ -208,7 +210,7 @@ class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
 
             if (score == nbCorrectAnswers) {
                 answering = false
-                winner = move.playerName
+                winner = playerID
             } else {
                 //messageResId = R.string.incorrect_toast
             }
