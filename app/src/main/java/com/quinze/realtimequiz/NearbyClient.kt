@@ -81,7 +81,7 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
                 onValueChange = { clientViewModel.playerName = it },
                 singleLine = true,
                 label = { Text("Username") })
-            Button(modifier = Modifier.padding(top = 5.dp), onClick = {
+            Button(modifier = Modifier.padding(top = 5.dp),enabled = clientViewModel.playerName.trim().isNotEmpty(), onClick = {
                 clientViewModel.startDiscovery()
             }) {
                 Icon(

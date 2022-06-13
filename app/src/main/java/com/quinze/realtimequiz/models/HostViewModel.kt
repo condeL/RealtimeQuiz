@@ -60,11 +60,47 @@ class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
         mConnectionsClient.stopAllEndpoints()
     }
 
-    fun calculateNbCorrectAnswers() {
-        nbCorrectAnswers = 0
+    private fun validateAnswerChoices():Int{
+        val indexes = mutableListOf<Int>()
+
         for (i in 0 until answers.size) {
-            if (answers[i].second) {
-                nbCorrectAnswers++
+            if (answers[i].first.trim().isEmpty()) {
+                indexes.add(i)
+            }
+        }
+
+        indexes.reversed().map{answers.removeAt(it)}
+
+        return answers.size
+    }
+
+    fun calculateNbCorrectAnswers() : Boolean {
+        if(validateAnswerChoices() >= 2) {
+            nbCorrectAnswers = 0
+            for (i in 0 until answers.size) {
+                if (answers[i].second) {
+                    nbCorrectAnswers++
+                }
+            }
+            val valid = if(mcq)
+                nbCorrectAnswers>1
+            else
+                nbCorrectAnswers==1
+            if(!valid){
+                repopulateAnswerChoices()
+            }
+            return valid
+        } else{
+            repopulateAnswerChoices()
+            return false
+        }
+
+    }
+
+    private fun repopulateAnswerChoices(){
+        if(answers.size<4) {
+            for (i in answers.size until 4) {
+                answers += Pair("", false)
             }
         }
     }
@@ -219,6 +255,7 @@ class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
                 //correct answer
                 answering = false
                 winner = playerID
+                repopulateAnswerChoices()
             } else {
                 //messageResId = R.string.incorrect_toast
             }
@@ -240,6 +277,7 @@ class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
             if (score == nbCorrectAnswers) {
                 answering = false
                 winner = playerID
+                repopulateAnswerChoices()
             } else {
                 //messageResId = R.string.incorrect_toast
             }

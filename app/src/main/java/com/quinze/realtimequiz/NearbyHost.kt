@@ -1,5 +1,6 @@
 package com.quinze.realtimequiz
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -12,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -94,7 +96,7 @@ class NearbyHost() {
                 onValueChange = { hostViewModel.hostName = it },
                 singleLine = true,
                 label = { Text("Hostname") })
-            Button(modifier = Modifier.padding(top = 5.dp), onClick = {
+            Button(modifier = Modifier.padding(top = 5.dp), enabled = hostViewModel.hostName.trim().isNotEmpty(), onClick = {
                 hostViewModel.startAdvertising()
             }) {
                 Icon(
@@ -130,12 +132,13 @@ class NearbyHost() {
     fun ShowQuestionField(players: Map<String, String>, hostViewModel: HostViewModel){
 
         val problem = hostViewModel.problem
-        //var question by remember { mutableStateOf("") }
 
         val truth = remember { mutableStateListOf(0,1,2,3)}
         val letters = listOf("A", "B", "C", "D")
-        //val answers = remember { mutableStateListOf("","",null,null)}
         val (selectedOption, onOptionSelected) = remember { mutableStateOf(truth[0]) }
+
+        val context = LocalContext.current
+
 
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -187,31 +190,35 @@ class NearbyHost() {
             Spacer(Modifier.height(28.dp))
 
 
-            Button(modifier = Modifier.padding(top = 5.dp), enabled = !hostViewModel.answering
+            Button(modifier = Modifier.padding(top = 5.dp), enabled = !hostViewModel.answering && hostViewModel.problem.trim().isNotEmpty()
                 ,onClick = {
                     if(!hostViewModel.mcq){
                         hostViewModel.answers.replaceAll{ it.copy(second=false)}
                         hostViewModel.answers[selectedOption] = hostViewModel.answers[selectedOption].copy(second=true)
                     }
 
-                    hostViewModel.answering=true
-                    hostViewModel.calculateNbCorrectAnswers()
-                    hostViewModel.winner=""
+                    if (!hostViewModel.calculateNbCorrectAnswers()){
+                        Toast.makeText(context, "Invalid answers", Toast.LENGTH_LONG).show()
+                    }else{
+                        hostViewModel.answering=true
+                        hostViewModel.winner=""
 
-                    val game = GameState(
-                        answering = hostViewModel.answering,
-                        problem = hostViewModel.problem,
-                        answers = hostViewModel.answers.map{ it.first },
-                        mcq = hostViewModel.mcq,
-                        winner = hostViewModel.players[hostViewModel.winner]?:"",
-                        hostName = hostViewModel.hostName,
-                        players = hostViewModel.players
-                    )
-                    val jsonGame = Gson().toJson(game)
-                    val bytesPayload = Payload.fromBytes(jsonGame.encodeToByteArray())
+                        val game = GameState(
+                            answering = hostViewModel.answering,
+                            problem = hostViewModel.problem,
+                            answers = hostViewModel.answers.map{ it.first },
+                            mcq = hostViewModel.mcq,
+                            winner = hostViewModel.players[hostViewModel.winner]?:"",
+                            hostName = hostViewModel.hostName,
+                            players = hostViewModel.players
+                        )
+                        val jsonGame = Gson().toJson(game)
+                        val bytesPayload = Payload.fromBytes(jsonGame.encodeToByteArray())
 
-                    hostViewModel.mConnectionsClient.sendPayload(players.keys.toList(), bytesPayload)
-                }) {
+                        hostViewModel.mConnectionsClient.sendPayload(players.keys.toList(), bytesPayload)
+                    }
+                }
+            ) {
                 Text(text="SEND QUESTION")
                 Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                 Icon(
@@ -226,6 +233,9 @@ class NearbyHost() {
 
     @Composable
     fun Alert(connectionsClient: ConnectionsClient ,hostViewModel: HostViewModel){
+
+        val context = LocalContext.current
+
         AlertDialog(
             modifier = Modifier.fillMaxWidth(),
             onDismissRequest = {
@@ -275,6 +285,8 @@ class NearbyHost() {
                         onClick = {
                             hostViewModel.connectionAlert = false
                             connectionsClient.rejectConnection(hostViewModel.connectionAlertID)
+                            Toast.makeText(context, "Connection refused!", Toast.LENGTH_LONG).show()
+
                         }
                     ) {
                         Text("CANCEL", modifier = Modifier.padding(vertical = 10.dp))
