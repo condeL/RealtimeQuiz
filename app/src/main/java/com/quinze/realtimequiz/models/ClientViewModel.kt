@@ -21,6 +21,9 @@ class ClientViewModel(connectionsClient: ConnectionsClient): ViewModel() {
     var discovering by mutableStateOf(false)
     var answering  by mutableStateOf(false)
 
+    var connectionAlert by mutableStateOf(false)
+    var connectionAlertID by mutableStateOf("")
+    var connectionAlertCode by mutableStateOf("")
 
     var problem by mutableStateOf("")
     var mcq by mutableStateOf(false)
@@ -28,7 +31,7 @@ class ClientViewModel(connectionsClient: ConnectionsClient): ViewModel() {
     var winner by mutableStateOf("")
     var answerChoice = mutableStateListOf<Int>()
 
-    var playerName by mutableStateOf("Lance")
+    var playerName by mutableStateOf("Player")
     var hostID by mutableStateOf("")
     var hostName by mutableStateOf("")
 
@@ -39,6 +42,7 @@ class ClientViewModel(connectionsClient: ConnectionsClient): ViewModel() {
 
     override fun onCleared() {
         super.onCleared()
+        discovering = false
         mConnectionsClient.stopDiscovery()
         mConnectionsClient.stopAllEndpoints()
     }
@@ -76,7 +80,10 @@ class ClientViewModel(connectionsClient: ConnectionsClient): ViewModel() {
         object : ConnectionLifecycleCallback() {
             override fun onConnectionInitiated(endpointId: String, connectionInfo: ConnectionInfo) {
                 // Automatically accept the connection on both sides.
-                mConnectionsClient.acceptConnection(endpointId, payloadCallback)
+                //mConnectionsClient.acceptConnection(endpointId, payloadCallback)
+                connectionAlertID = endpointId
+                connectionAlertCode = connectionInfo.authenticationDigits
+                connectionAlert = true
             }
 
             override fun onConnectionResult(endpointId: String, result: ConnectionResolution) {
@@ -93,12 +100,19 @@ class ClientViewModel(connectionsClient: ConnectionsClient): ViewModel() {
                     }
                     ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED -> {
                         Log.d("Nearby Connection: ", "Rejected")
+                        connected=false
+                        discovering=false
+
                     }
                     ConnectionsStatusCodes.STATUS_ERROR -> {
                         Log.d("Nearby Connection: ", "Error")
+                        connected=false
+                        discovering=false
                     }
                     else -> {
                         Log.d("Nearby Connection: ", "Something happened")
+                        connected=false
+                        discovering=false
                     }
                 }
             }
@@ -112,7 +126,7 @@ class ClientViewModel(connectionsClient: ConnectionsClient): ViewModel() {
             }
         }
 
-    private val payloadCallback : PayloadCallback =
+    val payloadCallback : PayloadCallback =
         object : PayloadCallback(){
             override fun onPayloadReceived(endpointId: String, payload: Payload) {
                 // This always gets the full data of the payload. Is null if it's not a BYTES payload.

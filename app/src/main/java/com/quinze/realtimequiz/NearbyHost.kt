@@ -1,8 +1,8 @@
 package com.quinze.realtimequiz
 
-import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -12,14 +12,19 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.ParagraphStyle
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.gms.nearby.connection.*
 import com.google.gson.Gson
 import com.quinze.realtimequiz.models.HostViewModel
-import com.quinze.realtimequiz.models.Question
-import java.util.function.UnaryOperator
 
 class NearbyHost() {
 
@@ -32,10 +37,13 @@ class NearbyHost() {
     fun QuizCreation(connectionsClient: ConnectionsClient, hostViewModel :HostViewModel = viewModel(factory = HostViewModel.HostViewModelFactory(connectionsClient))) {
         val players = hostViewModel.players
         val connected = hostViewModel.connected
-
-        val question = hostViewModel.problem
+        val advertising = hostViewModel.advertising
         //var question by remember { mutableStateOf("") }
 
+        if (hostViewModel.connectionAlert) {
+
+            Alert(connectionsClient, hostViewModel)
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -44,11 +52,10 @@ class NearbyHost() {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            if(connected) {
-                ShowParticipants(players, hostViewModel.winner)
+            if(!advertising && !connected){
+                ShowNameSelection(hostViewModel)
             }
-            if (!connected) {
-
+            else if (!connected) {
                 Card() {
                     Column(
                         Modifier.padding(all = 16.dp),
@@ -56,30 +63,47 @@ class NearbyHost() {
                     ) {
 
                         Text(text = "Connecting...")
-                        hostViewModel.startAdvertising()
                     }
                 }
             }else {
+                ShowParticipants(players, hostViewModel.winner)
+
                 /*if(players.size<1){
                             Text(text = "Waiting for players...")
                         }else {
                          */
-                Card(modifier = Modifier.padding(horizontal = 24.dp).fillMaxWidth()) {
+                Card(modifier = Modifier
+                    .padding(horizontal = 24.dp)
+                    .fillMaxWidth()) {
                     Column(
                         Modifier.padding(all = 32.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        //if (!hostViewModel.answering)
                         ShowQuestionField(players, hostViewModel)
-                        /*else
-                            ShowWinner(hostViewModel)*/
                     }
                 }
             }
         }
     }
 
-
+    @Composable
+    fun ShowNameSelection(hostViewModel: HostViewModel){
+        Row() {
+            OutlinedTextField(
+                value = hostViewModel.hostName,
+                onValueChange = { hostViewModel.hostName = it },
+                singleLine = true,
+                label = { Text("Hostname") })
+            Button(modifier = Modifier.padding(top = 5.dp), onClick = {
+                hostViewModel.startAdvertising()
+            }) {
+                Icon(
+                    Icons.Filled.Send,
+                    contentDescription = null,
+                    modifier = Modifier.padding(vertical = 10.dp))
+            }
+        }
+    }
 
     @Composable
     fun ShowParticipants(players: Map<String, String>, winnerID: String){
@@ -109,6 +133,7 @@ class NearbyHost() {
         //var question by remember { mutableStateOf("") }
 
         val truth = remember { mutableStateListOf(0,1,2,3)}
+        val letters = listOf("A", "B", "C", "D")
         //val answers = remember { mutableStateListOf("","",null,null)}
         val (selectedOption, onOptionSelected) = remember { mutableStateOf(truth[0]) }
 
@@ -130,12 +155,13 @@ class NearbyHost() {
                 )
                 Text(text="Multiple choice?")
             }
-            for(i in 0..3){
+
+            for(i in 0 until hostViewModel.answers.size){
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     if(hostViewModel.mcq){
                         Checkbox(
-                            checked = hostViewModel.truths[i],
-                            onCheckedChange = { hostViewModel.truths[i] = it },
+                            checked = hostViewModel.answers[i].second,
+                            onCheckedChange = { hostViewModel.answers[i] = hostViewModel.answers[i].copy(second=it)},
                             enabled = !hostViewModel.answering
                         )
                     }else {
@@ -147,14 +173,16 @@ class NearbyHost() {
                     }
                     OutlinedTextField(
                         modifier = Modifier.fillMaxWidth(),
-                        value = hostViewModel.answers[i],
-                        onValueChange = { hostViewModel.answers[i] = it },
-                        label = { Text("Answer ${truth[i]}")},
+                        value = hostViewModel.answers[i].first,
+                        onValueChange = { hostViewModel.answers[i] = hostViewModel.answers[i].copy(first=it)},
+                        label = { Text("Answer ${letters[i]}")},
                         singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                         enabled = !hostViewModel.answering
                     )
                 }
             }
+
 
             Spacer(Modifier.height(28.dp))
 
@@ -162,14 +190,9 @@ class NearbyHost() {
             Button(modifier = Modifier.padding(top = 5.dp), enabled = !hostViewModel.answering
                 ,onClick = {
                     if(!hostViewModel.mcq){
-                        hostViewModel.truths.replaceAll( {false}  )
-                        hostViewModel.truths[selectedOption]=true
+                        hostViewModel.answers.replaceAll{ it.copy(second=false)}
+                        hostViewModel.answers[selectedOption] = hostViewModel.answers[selectedOption].copy(second=true)
                     }
-                    /*val question = Question(problem = hostViewModel.problem,
-                        answers = hostViewModel.answers,
-                        truths =  hostViewModel.truths,
-                        multipleChoice = hostViewModel.mcq
-                    )*/
 
                     hostViewModel.answering=true
                     hostViewModel.calculateNbCorrectAnswers()
@@ -178,7 +201,7 @@ class NearbyHost() {
                     val game = GameState(
                         answering = hostViewModel.answering,
                         problem = hostViewModel.problem,
-                        answers = hostViewModel.answers,
+                        answers = hostViewModel.answers.map{ it.first },
                         mcq = hostViewModel.mcq,
                         winner = hostViewModel.players[hostViewModel.winner]?:"",
                         hostName = hostViewModel.hostName,
@@ -187,7 +210,6 @@ class NearbyHost() {
                     val jsonGame = Gson().toJson(game)
                     val bytesPayload = Payload.fromBytes(jsonGame.encodeToByteArray())
 
-                    //val bytesPayload = Payload.fromBytes(question.encodeToByteArray())
                     hostViewModel.mConnectionsClient.sendPayload(players.keys.toList(), bytesPayload)
                 }) {
                 Text(text="SEND QUESTION")
@@ -200,5 +222,65 @@ class NearbyHost() {
             }
 
         }
+    }
+
+    @Composable
+    fun Alert(connectionsClient: ConnectionsClient ,hostViewModel: HostViewModel){
+        AlertDialog(
+            modifier = Modifier.fillMaxWidth(),
+            onDismissRequest = {
+                hostViewModel.connectionAlert = false
+            },
+            title = {
+                Text(text = "Accept connection to " + hostViewModel.connectionAlertID)
+            },
+            text = {
+                Text(modifier = Modifier.fillMaxWidth(),
+                    text = buildAnnotatedString {
+                        withStyle(style = ParagraphStyle(textAlign = TextAlign.Center)) {
+
+                            append("Confirm the code matches on both devices:\n\n")
+                            withStyle(
+                                style = SpanStyle(
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colors.primary
+                                )
+                            ) {
+                                append(hostViewModel.connectionAlertCode)
+                            }
+                        }
+                    }
+                )
+            },
+            buttons = {
+                Row(
+                    modifier = Modifier.padding(16.dp, 0.dp, 16.dp, 16.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Button(
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            hostViewModel.connectionAlert = false
+                            connectionsClient.acceptConnection(hostViewModel.connectionAlertID, hostViewModel.payloadCallback)
+                        }
+                    ) {
+                        Text("ACCEPT", modifier = Modifier.padding(vertical = 10.dp))
+                    }
+
+                    Spacer(Modifier.width(16.dp))
+
+                    Button(
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            hostViewModel.connectionAlert = false
+                            connectionsClient.rejectConnection(hostViewModel.connectionAlertID)
+                        }
+                    ) {
+                        Text("CANCEL", modifier = Modifier.padding(vertical = 10.dp))
+                    }
+                }
+            }
+        )
     }
 }

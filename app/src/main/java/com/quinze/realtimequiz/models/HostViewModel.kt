@@ -1,15 +1,19 @@
 package com.quinze.realtimequiz.models
 
+import android.R
+import android.app.AlertDialog
+import android.content.DialogInterface
 import android.util.Log
-import android.widget.CheckBox
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
 import com.google.gson.Gson
 import com.quinze.realtimequiz.GameMove
 import com.quinze.realtimequiz.GameState
 import com.quinze.realtimequiz.MainActivity
+
 
 class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
 
@@ -18,12 +22,19 @@ class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
 
     var connected by mutableStateOf(false)
         private set
+    var advertising by mutableStateOf(false)
+        private set
     var answering by mutableStateOf(false)
 
+    var connectionAlert by mutableStateOf(false)
+    var connectionAlertID by mutableStateOf("")
+    var connectionAlertCode by mutableStateOf("")
+
+
+
     var problem by mutableStateOf("")
-    //val question :Question? = null
-    var answers = mutableStateListOf("","","","")
-    var truths = mutableStateListOf(false,false,false,false)
+    var answers = mutableStateListOf(Pair("",false),Pair("",false),Pair("",false),Pair("",false))
+
     var nbCorrectAnswers = 0
 
 
@@ -31,9 +42,6 @@ class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
     var winner by mutableStateOf("")
 
     var hostName by mutableStateOf("Host")
-        private set
-    var hostID by mutableStateOf("")
-        private set
 
 
     val players = mutableStateMapOf<String, String>()
@@ -47,6 +55,7 @@ class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
 
     override fun onCleared() {
         super.onCleared()
+        advertising = false
         mConnectionsClient.stopAdvertising()
         mConnectionsClient.stopAllEndpoints()
     }
@@ -54,7 +63,7 @@ class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
     fun calculateNbCorrectAnswers() {
         nbCorrectAnswers = 0
         for (i in 0 until answers.size) {
-            if (truths[i]) {
+            if (answers[i].second) {
                 nbCorrectAnswers++
             }
         }
@@ -65,7 +74,7 @@ class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
             AdvertisingOptions.Builder().setStrategy(Strategy.P2P_STAR).build()
         //var result = false
         Log.d("Nearby Advertising: ", "Advertising...")
-
+        advertising = true
         mConnectionsClient
             .startAdvertising(
                 "Host", MainActivity.SERVICE_ID, connectionLifecycleCallback, advertisingOptions
@@ -76,6 +85,7 @@ class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
             }
             .addOnFailureListener { e: Exception? ->
                 Log.d("Nearby Advertising: ", e.toString())
+                advertising=false
             }
         Log.d("Nearby Advertising Result: ", connected.toString())
 
@@ -97,11 +107,30 @@ class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
             }
         }
 
+
+
     val connectionLifecycleCallback: ConnectionLifecycleCallback =
         object : ConnectionLifecycleCallback() {
+
             override fun onConnectionInitiated(endpointId: String, connectionInfo: ConnectionInfo) {
-                // Automatically accept the connection on both sides.
-                connectionsClient.acceptConnection(endpointId, payloadCallback)
+                /*AlertDialog.Builder(context)
+                    .setTitle("Accept connection to " + info.endpointName)
+                    .setMessage("Confirm the code matches on both devices: " + info.authenticationDigits)
+                    .setPositiveButton(
+                        "Accept"
+                    ) { dialog: DialogInterface?, which: Int ->  // The user confirmed, so we can accept the connection.
+                        mConnectionsClient.acceptConnection(endpointId!!, payloadCallback)
+                    }
+                    .setNegativeButton(
+                        "cancel"
+                    ) { dialog: DialogInterface?, which: Int ->  // The user canceled, so we should reject the connection.
+                        mConnectionsClient.rejectConnection(endpointId!!)
+                    }
+                    .setIcon(R.drawable.ic_dialog_alert)
+                    .show()*/
+                connectionAlertID = endpointId
+                connectionAlertCode = connectionInfo.authenticationDigits
+                connectionAlert = true
             }
 
             override fun onConnectionResult(endpointId: String, result: ConnectionResolution) {
@@ -129,7 +158,7 @@ class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
             }
         }
 
-    private val payloadCallback : PayloadCallback =
+    val payloadCallback : PayloadCallback =
         object : PayloadCallback(){
             override fun onPayloadReceived(endpointId: String, payload: Payload) {
                 // This always gets the full data of the payload. Is null if it's not a BYTES payload.
@@ -151,7 +180,7 @@ class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
                         GameState(
                             answering = answering,
                             problem = problem,
-                            answers = answers,
+                            answers = answers.map{ it.first },
                             mcq = mcq,
                             winner = "",
                             hostName = hostName,
@@ -160,7 +189,7 @@ class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
                         GameState(
                             answering = answering,
                             problem = problem,
-                            answers = answers,
+                            answers = answers.map{ it.first },
                             mcq = mcq,
                             winner = players[winner]?:"",
                             hostName = hostName,
@@ -186,7 +215,7 @@ class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
 
     fun evaluateMove(move: GameMove, playerID: String){
         if (!mcq) {
-            if (truths[move.answer[0]]) {
+            if (answers[move.answer[0]].second) {
                 //correct answer
                 answering = false
                 winner = playerID
@@ -197,7 +226,7 @@ class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
             var score = 0
             run loop@{
                 move.answer.forEach {
-                    if (truths[it]) {
+                    if (answers[it].second) {
                         score++
                     } else {
                         score = -10

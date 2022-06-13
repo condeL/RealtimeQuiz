@@ -13,8 +13,17 @@ import androidx.compose.material.icons.filled.Send
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.ParagraphStyle
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.android.gms.nearby.connection.*
 import com.google.gson.Gson
@@ -34,6 +43,9 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
         val connected = clientViewModel.connected
         val discovering = clientViewModel.discovering
 
+        if (clientViewModel.connectionAlert) {
+            Alert(connectionsClient, clientViewModel)
+        }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -43,11 +55,11 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
 
-            if(!discovering && !connected){
+            if(!clientViewModel.discovering && !clientViewModel.connected){
                 ShowNameSelection(clientViewModel)
             }
 
-            else if (!connected) {
+            else if (!clientViewModel.connected) {
                 clientViewModel.startDiscovery()
                 Card() {
                     Text(modifier = Modifier.padding(all = 16.dp), text = "Connecting...")
@@ -83,8 +95,9 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
     @Composable
     fun ShowQuestion(clientViewModel: ClientViewModel){
 
-        val answers = clientViewModel.answers
+        //val answers = clientViewModel.answers
         /*val (selectedOption, onOptionSelected) = remember { mutableStateOf(answers[0]) }*/
+        val answers = remember { mutableStateListOf(0,1,2,3)}
 
         //val answers = listOf("A: Guinea", "B: Mali", "C: Liberia", "D: Togo")
         val mcq = clientViewModel.mcq
@@ -152,7 +165,7 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
                             )
                         }
                         Text(
-                            text = answers[i],
+                            text = clientViewModel.answers[i],
                             style = MaterialTheme.typography.body1.merge(),
                             modifier = Modifier.padding(start = 16.dp)
                         )
@@ -167,9 +180,9 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
         Button(onClick = {
 
             if(!clientViewModel.mcq){
-                val index = clientViewModel.answers.indexOf(selectedOption)
+                //val index = clientViewModel.answers.indexOf(selectedOption)
                 clientViewModel.answerChoice.clear()
-                clientViewModel.answerChoice.add(index)
+                clientViewModel.answerChoice.add(selectedOption)
             }
             Log.d("Answer", clientViewModel.answerChoice.joinToString(","))
             val move = GameMove(playerName = clientViewModel.playerName, answer = clientViewModel.answerChoice)
@@ -192,5 +205,66 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
             Text(text = "Winner: $winner", Modifier.padding(all = 16.dp))
         }
         Spacer(Modifier.height(14.dp))
+    }
+
+    @Composable
+    fun Alert(connectionsClient: ConnectionsClient, clientViewModel: ClientViewModel){
+        AlertDialog(
+            onDismissRequest = {
+                clientViewModel.connectionAlert = false
+            },
+            title = {
+                Text(text = "Accept connection to " + clientViewModel.connectionAlertID)
+            },
+            text = {
+                Text(modifier = Modifier.fillMaxWidth(),
+                    text = buildAnnotatedString {
+                        withStyle(style = ParagraphStyle(textAlign = TextAlign.Center)) {
+
+                            append("Confirm the code matches on both devices:\n\n")
+
+                            withStyle(
+                                style = SpanStyle(
+                                    fontSize = 24.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colors.primary
+                                )
+                            ) {
+                                append(clientViewModel.connectionAlertCode)
+                            }
+                        }
+                    }
+                )
+
+            },
+            buttons = {
+                Row(
+                    modifier = Modifier.padding(16.dp, 0.dp, 16.dp, 16.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Button(
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            clientViewModel.connectionAlert = false
+                            connectionsClient.acceptConnection(clientViewModel.connectionAlertID, clientViewModel.payloadCallback)
+                        }
+                    ) {
+                        Text("ACCEPT", modifier = Modifier.padding(vertical = 10.dp))
+                    }
+
+                    Spacer(Modifier.width(16.dp))
+
+                    Button(
+                        modifier = Modifier.weight(1f),
+                        onClick = {
+                            clientViewModel.connectionAlert = false
+                            connectionsClient.rejectConnection(clientViewModel.connectionAlertID)
+                        }
+                    ) {
+                        Text("CANCEL", modifier = Modifier.padding(vertical = 10.dp))
+                    }
+                }
+            }
+        )
     }
 }
