@@ -65,10 +65,11 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
                     Text(modifier = Modifier.padding(all = 16.dp), text = "Connecting...")
                 }
             }
-            else if(clientViewModel.answering) {
+            else {
                 ShowQuestion(clientViewModel)
-            } else {
-                ShowWinner(clientViewModel.winner)
+                if(!clientViewModel.answering) {
+                    ShowWinner(clientViewModel.winner)
+                }
             }
         }
     }
@@ -93,15 +94,18 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
     }
 
     @Composable
-    fun ShowQuestion(clientViewModel: ClientViewModel){
+    fun ShowQuestion(clientViewModel: ClientViewModel) {
 
         //val answers = clientViewModel.answers
         /*val (selectedOption, onOptionSelected) = remember { mutableStateOf(answers[0]) }*/
-        val answers = remember { mutableStateListOf(0,1,2,3)}
+        val answers = remember { mutableStateListOf(0, 1, 2, 3) }
+        val letters = listOf("A", "B", "C", "D")
 
         //val answers = listOf("A: Guinea", "B: Mali", "C: Liberia", "D: Togo")
         val mcq = clientViewModel.mcq
-        val (selectedOption, onOptionSelected) = remember { mutableStateOf(/*clientViewModel.*/answers[0]) }
+        val (selectedOption, onOptionSelected) = remember {
+            mutableStateOf(/*clientViewModel.*/answers[0])
+        }
 
         Card() {
             Column(
@@ -128,15 +132,19 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
 
         Card(Modifier.padding(horizontal = 24.dp)) {
             Column(Modifier.selectableGroup()) {
-                for(i in 0 until clientViewModel.answers.size){
+                for (i in 0 until clientViewModel.answers.size) {
                     Row(
-                        modifier = if(mcq){
+                        modifier = if (mcq) {
                             Modifier
                                 .fillMaxWidth()
                                 .height(56.dp)
                                 .toggleable(
                                     value = clientViewModel.answerChoice.contains(i),
-                                    onValueChange = {if(it) clientViewModel.answerChoice.add(i) else clientViewModel.answerChoice.remove(i) },
+                                    onValueChange = {
+                                        if (it) clientViewModel.answerChoice.add(i) else clientViewModel.answerChoice.remove(
+                                            i
+                                        )
+                                    },
                                     role = Role.Checkbox
                                 )
                                 .padding(horizontal = 16.dp)
@@ -153,14 +161,20 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
                         },
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        if(mcq){
+                        if (mcq) {
                             Checkbox(
-                                checked = clientViewModel.answerChoice.contains(i),
-                                onCheckedChange = { if(it) clientViewModel.answerChoice.add(i) else clientViewModel.answerChoice.remove(i) },
+                                checked = if (!clientViewModel.answered) clientViewModel.answerChoice.contains(
+                                    i
+                                ) else true,
+                                onCheckedChange = {
+                                    if (it) clientViewModel.answerChoice.add(i) else clientViewModel.answerChoice.remove(
+                                        i
+                                    )
+                                },
                             )
-                        }else {
+                        } else {
                             RadioButton(
-                                selected = (answers[i] == selectedOption),
+                                selected = if (!clientViewModel.answered) (answers[i] == selectedOption) else true,
                                 onClick = null // null recommended for accessibility with screenreaders
                             )
                         }
@@ -177,26 +191,31 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
 
         Spacer(Modifier.height(28.dp))
 
-        Button(onClick = {
+        if (!clientViewModel.answered) {
+            Button(onClick = {
 
-            if(!clientViewModel.mcq){
-                //val index = clientViewModel.answers.indexOf(selectedOption)
-                clientViewModel.answerChoice.clear()
-                clientViewModel.answerChoice.add(selectedOption)
+                if (!clientViewModel.mcq) {
+                    //val index = clientViewModel.answers.indexOf(selectedOption)
+                    clientViewModel.answerChoice.clear()
+                    clientViewModel.answerChoice.add(selectedOption)
+                }
+                Log.d("Answer", clientViewModel.answerChoice.joinToString(","))
+                val move = GameMove(
+                    playerName = clientViewModel.playerName,
+                    answer = clientViewModel.answerChoice
+                )
+                val jsonMove = Gson().toJson(move)
+                val bytesPayload = Payload.fromBytes(jsonMove.encodeToByteArray())
+                clientViewModel.mConnectionsClient.sendPayload(clientViewModel.hostID, bytesPayload)
+            }) {
+                Text("SEND ANSWER")
+                Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                Icon(
+                    Icons.Filled.Send,
+                    contentDescription = null,
+                    modifier = Modifier.padding(vertical = 10.dp)
+                )
             }
-            Log.d("Answer", clientViewModel.answerChoice.joinToString(","))
-            val move = GameMove(playerName = clientViewModel.playerName, answer = clientViewModel.answerChoice)
-            val jsonMove = Gson().toJson(move)
-            val bytesPayload = Payload.fromBytes(jsonMove.encodeToByteArray())
-            clientViewModel.mConnectionsClient.sendPayload(clientViewModel.hostID, bytesPayload)
-        }) {
-            Text("SEND ANSWER")
-            Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-            Icon(
-                Icons.Filled.Send,
-                contentDescription = null,
-                modifier = Modifier.padding(vertical = 10.dp)
-            )
         }
     }
     @Composable

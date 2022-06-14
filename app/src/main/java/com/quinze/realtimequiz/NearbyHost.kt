@@ -200,13 +200,15 @@ class NearbyHost() {
                     if (!hostViewModel.calculateNbCorrectAnswers()){
                         Toast.makeText(context, "Invalid answers", Toast.LENGTH_LONG).show()
                     }else{
+                        hostViewModel.answered=false
                         hostViewModel.answering=true
                         hostViewModel.winner=""
 
                         val game = GameState(
                             answering = hostViewModel.answering,
+                            answered = hostViewModel.answered,
                             problem = hostViewModel.problem,
-                            answers = hostViewModel.answers.map{ it.first },
+                            answers = hostViewModel.answers.unzip().first,
                             mcq = hostViewModel.mcq,
                             winner = hostViewModel.players[hostViewModel.winner]?:"",
                             hostName = hostViewModel.hostName,

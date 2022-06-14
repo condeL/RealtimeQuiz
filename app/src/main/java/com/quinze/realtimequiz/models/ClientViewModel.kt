@@ -20,6 +20,8 @@ class ClientViewModel(connectionsClient: ConnectionsClient): ViewModel() {
     var connected  by mutableStateOf(false)
     var discovering by mutableStateOf(false)
     var answering  by mutableStateOf(false)
+    var answered by mutableStateOf(false)
+
 
     var connectionAlert by mutableStateOf(false)
     var connectionAlertID by mutableStateOf("")
@@ -139,6 +141,7 @@ class ClientViewModel(connectionsClient: ConnectionsClient): ViewModel() {
                     val game = Gson().fromJson(jsonGame, GameState::class.java)
 
                     answering = game.answering
+                    answered = game.answered
                     problem = game.problem
                     mcq=game.mcq
                     answers.clear()
