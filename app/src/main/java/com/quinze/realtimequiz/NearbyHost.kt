@@ -1,12 +1,14 @@
 package com.quinze.realtimequiz
 
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.runtime.*
 
@@ -190,44 +192,94 @@ class NearbyHost() {
             Spacer(Modifier.height(28.dp))
 
 
-            Button(modifier = Modifier.padding(top = 5.dp), enabled = !hostViewModel.answering && hostViewModel.problem.trim().isNotEmpty()
-                ,onClick = {
-                    if(!hostViewModel.mcq){
-                        hostViewModel.answers.replaceAll{ it.copy(second=false)}
-                        hostViewModel.answers[selectedOption] = hostViewModel.answers[selectedOption].copy(second=true)
-                    }
+            if(hostViewModel.answering){
+                OutlinedButton(modifier = Modifier.padding(top = 5.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colors.error),
+                    border= BorderStroke(1.dp, MaterialTheme.colors.error),
+                    onClick = {
+                        if(hostViewModel.answering){
+                            hostViewModel.repopulateAnswerChoices()
+                            hostViewModel.answering=false
+                            hostViewModel.answered = true
 
-                    if (!hostViewModel.calculateNbCorrectAnswers()){
-                        Toast.makeText(context, "Invalid answers", Toast.LENGTH_LONG).show()
-                    }else{
-                        hostViewModel.answered=false
-                        hostViewModel.answering=true
-                        hostViewModel.winner=""
-
+                        }
                         val game = GameState(
                             answering = hostViewModel.answering,
                             answered = hostViewModel.answered,
-                            problem = hostViewModel.problem,
-                            answers = hostViewModel.answers.unzip().first,
+                            problem = hostViewModel.winningProblem,
+                            answers = hostViewModel.winningAnswers,
                             mcq = hostViewModel.mcq,
-                            winner = hostViewModel.players[hostViewModel.winner]?:"",
+                            winner = hostViewModel.players[hostViewModel.winner] ?: "",
                             hostName = hostViewModel.hostName,
                             players = hostViewModel.players
                         )
                         val jsonGame = Gson().toJson(game)
                         val bytesPayload = Payload.fromBytes(jsonGame.encodeToByteArray())
 
-                        hostViewModel.mConnectionsClient.sendPayload(players.keys.toList(), bytesPayload)
+                        hostViewModel.mConnectionsClient.sendPayload(
+                            players.keys.toList(),
+                            bytesPayload
+                        )
+
+
                     }
+                ) {
+                    Text(text=if(hostViewModel.answering)"CANCEL QUESTION" else "SEND QUESTION")
+                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                    Icon(
+                        imageVector = if(hostViewModel.answering) Icons.Filled.Cancel else Icons.Filled.Send,
+                        contentDescription = null,
+                        modifier = Modifier.padding(vertical = 10.dp)
+                    )
                 }
-            ) {
-                Text(text="SEND QUESTION")
-                Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                Icon(
-                    Icons.Filled.Send,
-                    contentDescription = null,
-                    modifier = Modifier.padding(vertical = 10.dp)
-                )
+            } else {
+
+                Button(modifier = Modifier.padding(top = 5.dp),
+                    enabled = hostViewModel.problem.trim().isNotEmpty(),
+                    onClick = {
+                        if (!hostViewModel.mcq) {
+                            hostViewModel.answers.replaceAll { it.copy(second = false) }
+                            hostViewModel.answers[selectedOption] =
+                                hostViewModel.answers[selectedOption].copy(second = true)
+                        }
+
+                        if (!hostViewModel.calculateNbCorrectAnswers()) {
+                            Toast.makeText(context, "Invalid answers", Toast.LENGTH_LONG).show()
+                        } else {
+                            hostViewModel.answered = false
+                            hostViewModel.answering = true
+                            hostViewModel.winner = ""
+                            hostViewModel.winningAnswers = listOf()
+                            hostViewModel.winningProblem = "Canceled by host..."
+
+                            val game = GameState(
+                                answering = hostViewModel.answering,
+                                answered = hostViewModel.answered,
+                                problem = hostViewModel.problem,
+                                answers = hostViewModel.answers.unzip().first,
+                                mcq = hostViewModel.mcq,
+                                winner = hostViewModel.players[hostViewModel.winner] ?: "",
+                                hostName = hostViewModel.hostName,
+                                players = hostViewModel.players
+                            )
+                            val jsonGame = Gson().toJson(game)
+                            val bytesPayload = Payload.fromBytes(jsonGame.encodeToByteArray())
+
+                            hostViewModel.mConnectionsClient.sendPayload(
+                                players.keys.toList(),
+                                bytesPayload
+                            )
+                        }
+                    }
+                ) {
+                    Text(text = if (hostViewModel.answering) "CANCEL QUESTION" else "SEND QUESTION")
+                    Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                    Icon(
+                        imageVector = if (hostViewModel.answering) Icons.Filled.Cancel else Icons.Filled.Send,
+                        contentDescription = null,
+                        modifier = Modifier.padding(vertical = 10.dp)
+                    )
+                }
             }
 
         }

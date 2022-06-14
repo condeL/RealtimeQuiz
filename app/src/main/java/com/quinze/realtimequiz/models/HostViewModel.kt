@@ -100,7 +100,7 @@ class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
 
     }
 
-    private fun repopulateAnswerChoices(){
+    fun repopulateAnswerChoices(){
         if(answers.size<4) {
             for (i in answers.size until 4) {
                 answers += Pair("", false)
