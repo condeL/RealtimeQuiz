@@ -1,8 +1,11 @@
 package com.quinze.realtimequiz
 
+import android.content.Context
+import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
@@ -24,6 +27,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
@@ -94,6 +98,9 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalPermissionsApi::class)
     @Composable
     fun Login(navController : NavController, connectionsClient: ConnectionsClient){
+        val locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager;
+        val context = LocalContext.current
+        val GPSMessage = stringResource(R.string.please_activate_the_GPS)
         val multiplePermissionsState = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             rememberMultiplePermissionsState(
                 listOf(
@@ -131,7 +138,12 @@ class MainActivity : ComponentActivity() {
             Row(modifier = Modifier.width(ButtonDefaults.MinWidth*4)) {
                 Button(modifier = Modifier.fillMaxWidth(), onClick = {
                     if (multiplePermissionsState.allPermissionsGranted) {
-                        navController.navigate("create")
+
+                        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                            navController.navigate("create")
+                        } else {
+                            Toast.makeText(context, GPSMessage, Toast.LENGTH_LONG).show();
+                        }
 
                     } else {
                         multiplePermissionsState.launchMultiplePermissionRequest()
@@ -151,7 +163,11 @@ class MainActivity : ComponentActivity() {
 
                 Button(modifier = Modifier.fillMaxWidth(), onClick = {
                     if (multiplePermissionsState.allPermissionsGranted) {
-                        navController.navigate("answer")
+                        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                            navController.navigate("answer")
+                        } else {
+                            Toast.makeText(context, GPSMessage, Toast.LENGTH_LONG).show();
+                        }
                     } else {
                         multiplePermissionsState.launchMultiplePermissionRequest()
 

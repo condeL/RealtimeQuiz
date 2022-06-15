@@ -124,6 +124,8 @@ class ClientViewModel(connectionsClient: ConnectionsClient): ViewModel() {
                 // sent or received.
                 Log.d("Nearby Connection: ", "Lost: $endpointId")
                 connected = false
+                mConnectionsClient.stopDiscovery()
+                mConnectionsClient.stopAllEndpoints()
                 startDiscovery()
             }
         }

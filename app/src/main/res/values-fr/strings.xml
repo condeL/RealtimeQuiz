@@ -24,4 +24,5 @@
     <string name="confirm_the_code_matches">Confirmez que le code correspond sur les deux appareils</string>
     <string name="reject">REJETER</string>
     <string name="accept">ACCEPTER</string>
+    <string name="please_activate_the_GPS">Veuillez activer le GPS.</string>
 </resources>
