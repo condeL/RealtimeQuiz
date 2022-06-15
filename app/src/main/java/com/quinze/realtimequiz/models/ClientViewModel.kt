@@ -33,7 +33,7 @@ class ClientViewModel(connectionsClient: ConnectionsClient): ViewModel() {
     var winner by mutableStateOf("")
     var answerChoice = mutableStateListOf<Int>()
 
-    var playerName by mutableStateOf("Player")
+    var playerName by mutableStateOf("")
     var hostID by mutableStateOf("")
     var hostName by mutableStateOf("")
 

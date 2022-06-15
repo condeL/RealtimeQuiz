@@ -24,6 +24,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -49,8 +50,6 @@ class MainActivity : ComponentActivity() {
         mHost = NearbyHost()
         setContent {
             RealtimeQuizTheme {
-
-                //QuizAnswer()
                 Scaffold(
                     topBar = {
                         TopAppBar(
@@ -144,7 +143,7 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.padding(vertical = 10.dp).size(ButtonDefaults.IconSize)
                     )
                     Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                    Text("CREATE SESSION")
+                    Text(stringResource(R.string.create_session))
                 }
             }
             Spacer(Modifier.height(56.dp))
@@ -164,7 +163,7 @@ class MainActivity : ComponentActivity() {
                         modifier = Modifier.padding(vertical = 10.dp).size(ButtonDefaults.IconSize)
                     )
                     Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-                    Text("JOIN SESSION")
+                    Text(stringResource(R.string.join_session))
                 }
             }
         }

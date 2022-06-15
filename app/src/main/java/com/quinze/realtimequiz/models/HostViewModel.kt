@@ -39,7 +39,7 @@ class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
     var mcq by mutableStateOf(false)
     var winner by mutableStateOf("")
 
-    var hostName by mutableStateOf("Host")
+    var hostName by mutableStateOf("")
 
 
     val players = mutableStateMapOf<String, String>()

@@ -18,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -34,22 +35,16 @@ import com.quinze.realtimequiz.models.HostViewModel
 
 class NearbyHost() {
 
-    //var mConnectionsClient: ConnectionsClient = connectionsClient
-
-    //val mPlayers = hostViewModel.players
-    //val hostViewModel :HostViewModel =
-
     @Composable
     fun QuizCreation(connectionsClient: ConnectionsClient, hostViewModel :HostViewModel = viewModel(factory = HostViewModel.HostViewModelFactory(connectionsClient))) {
         val players = hostViewModel.players
         val connected = hostViewModel.connected
         val advertising = hostViewModel.advertising
-        //var question by remember { mutableStateOf("") }
 
         if (hostViewModel.connectionAlert) {
-
             Alert(connectionsClient, hostViewModel)
         }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -67,8 +62,7 @@ class NearbyHost() {
                         Modifier.padding(all = 16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-
-                        Text(text = "Connecting...")
+                        Text(text = "${stringResource(R.string.connecting)}...")
                     }
                 }
             }else {
@@ -101,7 +95,7 @@ class NearbyHost() {
                     value = hostViewModel.hostName,
                     onValueChange = { hostViewModel.hostName = it },
                     singleLine = true,
-                    label = { Text("Hostname") })
+                    label = { Text(stringResource(R.string.hostname)) })
             }
             Column(modifier = Modifier.height(TextFieldDefaults.MinHeight*1.1f)) {
                 Button(
@@ -126,7 +120,7 @@ class NearbyHost() {
                 Modifier.padding(all = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "Participants: ${players.size}")
+                Text(text = "${stringResource(R.string.participants)}: ${players.size}")
                 players.forEach { player ->
                     val winner = player.key == winnerID
                     Row() {
@@ -152,13 +146,12 @@ class NearbyHost() {
         val context = LocalContext.current
 
 
-
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = problem,
                 onValueChange = { hostViewModel.problem = it },
-                label = { Text("Question") },
+                label = { Text(stringResource(R.string.question)) },
                 enabled = !hostViewModel.answering
             )
             Row(verticalAlignment = Alignment.CenterVertically){
@@ -168,7 +161,7 @@ class NearbyHost() {
                     enabled = !hostViewModel.answering
 
                 )
-                Text(text="Multiple choice?")
+                Text(text="${stringResource(R.string.multiple_choice)}?")
             }
 
             for(i in 0 until hostViewModel.answers.size){
@@ -186,11 +179,12 @@ class NearbyHost() {
                             enabled = !hostViewModel.answering
                         )
                     }
+                    val answerLabel = stringResource(R.string.answer)
                     OutlinedTextField(
                         modifier = Modifier.fillMaxWidth(),
                         value = hostViewModel.answers[i].first,
                         onValueChange = { hostViewModel.answers[i] = hostViewModel.answers[i].copy(first=it)},
-                        label = { Text("Answer ${letters[i]}")},
+                        label = { Text(text = "$answerLabel ${letters[i]}")},
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                         enabled = !hostViewModel.answering
@@ -232,7 +226,7 @@ class NearbyHost() {
                         )
                     }
                 ) {
-                    Text(text="CANCEL QUESTION")
+                    Text(text= stringResource(R.string.cancel_question))
                     Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                     Icon(
                         imageVector = Icons.Filled.Cancel,
@@ -241,7 +235,8 @@ class NearbyHost() {
                     )
                 }
             } else {
-
+                val invalid = stringResource(R.string.invalid_answers)
+                val canceled = stringResource(R.string.canceled_by_host)
                 Button(modifier = Modifier.padding(top = 5.dp),
                     enabled = hostViewModel.problem.trim().isNotEmpty(),
                     onClick = {
@@ -252,13 +247,13 @@ class NearbyHost() {
                         }
 
                         if (!hostViewModel.calculateNbCorrectAnswers()) {
-                            Toast.makeText(context, "Invalid answers", Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, invalid, Toast.LENGTH_LONG).show()
                         } else {
                             hostViewModel.answered = false
                             hostViewModel.answering = true
                             hostViewModel.winner = ""
                             hostViewModel.winningAnswers = listOf()
-                            hostViewModel.winningProblem = "Canceled by host..."
+                            hostViewModel.winningProblem = "$canceled..."
 
                             val game = GameState(
                                 answering = hostViewModel.answering,
@@ -280,7 +275,7 @@ class NearbyHost() {
                         }
                     }
                 ) {
-                    Text(text = "SEND QUESTION")
+                    Text(text = stringResource(R.string.send_question))
                     Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                     Icon(
                         Icons.Filled.Send,
@@ -304,7 +299,7 @@ class NearbyHost() {
                 //hostViewModel.connectionAlert = false
             },
             title = {
-                Text(text = "Accept connection to :")
+                Text(text = "${stringResource(R.string.accept_connection_to)}:")
             },
             text = null,
             buttons = {
@@ -332,7 +327,7 @@ class NearbyHost() {
                             })
 
                             Text(buildAnnotatedString {
-                                append("Code: ")
+                                append("${stringResource(R.string.code)}:")
                                 withStyle(
                                     style = SpanStyle(
                                         fontWeight = FontWeight.Bold,
@@ -391,6 +386,7 @@ class NearbyHost() {
                         .padding(16.dp, 0.dp, 16.dp, 16.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
+                    val refused = stringResource(R.string.connection_refused)
                     OutlinedButton(
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colors.error),
                         border= BorderStroke(1.dp, MaterialTheme.colors.error),
@@ -400,11 +396,11 @@ class NearbyHost() {
                             }
                             hostViewModel.connectionAlertInfo.clear()
                             hostViewModel.connectionAlert = hostViewModel.connectionAlertInfo.isNotEmpty()
-                            Toast.makeText(context, "Connection refused!", Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, "$refused!", Toast.LENGTH_LONG).show()
 
                         }
                     ) {
-                        Text("CANCEL ALL", modifier = Modifier.padding(vertical = 8.dp))
+                        Text(stringResource(R.string.cancel_all), modifier = Modifier.padding(vertical = 8.dp))
                         Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                         Icon(Icons.Filled.Block, contentDescription = null)
                     }
@@ -413,7 +409,6 @@ class NearbyHost() {
 
 
                     Button(
-                        //modifier = Modifier.weight(1f),
                         onClick = {
                             for(i in 0 until hostViewModel.connectionAlertInfo.size) {
                                 connectionsClient.acceptConnection(hostViewModel.connectionAlertInfo[i].first, hostViewModel.payloadCallback)
@@ -422,7 +417,7 @@ class NearbyHost() {
                             hostViewModel.connectionAlert = hostViewModel.connectionAlertInfo.isNotEmpty()
                         }
                     ) {
-                        Text("ACCEPT ALL", modifier = Modifier.padding(vertical = 8.dp))
+                        Text(stringResource(R.string.accept_all), modifier = Modifier.padding(vertical = 8.dp))
                         Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                         Icon(Icons.Filled.DoneAll, contentDescription = null)
                     }

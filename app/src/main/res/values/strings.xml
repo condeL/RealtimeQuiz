@@ -1,3 +1,27 @@
 <resources>
     <string name="app_name">RealtimeQuiz</string>
+    <string name="create_session">CREATE SESSION</string>
+    <string name="join_session">JOIN SESSION</string>
+    <string name="connecting">Connecting</string>
+    <string name="hostname">Hostname</string>
+    <string name="participants">Participants</string>
+    <string name="question">Question</string>
+    <string name="multiple_choice">Multiple choice</string>
+    <string name="answer">Answer</string>
+    <string name="cancel_question">CANCEL QUESTION</string>
+    <string name="invalid_answers">Invalid answers</string>
+    <string name="canceled_by_host">Canceled by host</string>
+    <string name="send_question">SEND QUESTION</string>
+    <string name="accept_connection_to">Accept connection to</string>
+    <string name="code">Code"</string>
+    <string name="connection_refused">Connection refused!</string>
+    <string name="cancel_all">CANCEL ALL</string>
+    <string name="accept_all">ACCEPT ALL</string>
+    <string name="username">Username</string>
+    <string name="host">Host</string>
+    <string name="send_answer">SEND ANSWER</string>
+    <string name="winner">Winner</string>
+    <string name="confirm_the_code_matches">Confirm the code matches on both devices</string>
+    <string name="reject">REJECT</string>
+    <string name="accept">ACCEPT</string>
 </resources>

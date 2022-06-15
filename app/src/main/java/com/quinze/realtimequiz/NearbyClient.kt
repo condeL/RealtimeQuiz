@@ -14,6 +14,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.ParagraphStyle
 import androidx.compose.ui.text.SpanStyle
@@ -31,17 +32,8 @@ import com.quinze.realtimequiz.models.ClientViewModel
 
 class NearbyClient(connectionsClient: ConnectionsClient) {
 
-    //var mConnectionsClient: ConnectionsClient = connectionsClient
-    //var mPlayer = MutableLiveData<String>("Me")
-    //var mHost = MutableLiveData<String>("")
-
-
     @Composable
     fun QuizAnswer(connectionsClient: ConnectionsClient, clientViewModel : ClientViewModel = viewModel(factory = ClientViewModel.ClientViewModelFactory(connectionsClient))) {
-
-
-        val connected = clientViewModel.connected
-        val discovering = clientViewModel.discovering
 
         if (clientViewModel.connectionAlert) {
             Alert(connectionsClient, clientViewModel)
@@ -62,7 +54,7 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
             else if (!clientViewModel.connected) {
                 clientViewModel.startDiscovery()
                 Card() {
-                    Text(modifier = Modifier.padding(all = 16.dp), text = "Connecting...")
+                    Text(modifier = Modifier.padding(all = 16.dp), text = "${stringResource(R.string.connecting)}...")
                 }
             }
             else {
@@ -83,7 +75,7 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
                     value = clientViewModel.playerName,
                     onValueChange = { clientViewModel.playerName = it },
                     singleLine = true,
-                    label = { Text("Username") })
+                    label = { Text(stringResource(R.string.username)) })
             }
             Column(modifier = Modifier.height(TextFieldDefaults.MinHeight*1.1f)) {
                 Button(
@@ -105,15 +97,13 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
     @Composable
     fun ShowQuestion(clientViewModel: ClientViewModel) {
 
-        //val answers = clientViewModel.answers
-        /*val (selectedOption, onOptionSelected) = remember { mutableStateOf(answers[0]) }*/
+
         val answers = remember { mutableStateListOf(0, 1, 2, 3) }
         val letters = listOf("A", "B", "C", "D")
 
-        //val answers = listOf("A: Guinea", "B: Mali", "C: Liberia", "D: Togo")
         val mcq = clientViewModel.mcq
         val (selectedOption, onOptionSelected) = remember {
-            mutableStateOf(/*clientViewModel.*/answers[0])
+            mutableStateOf(answers[0])
         }
 
         Card() {
@@ -121,7 +111,7 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
                 Modifier.padding(all = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "Host: ${clientViewModel.hostName}")
+                Text(text = "${stringResource(R.string.host)}: ${clientViewModel.hostName}")
             }
         }
 
@@ -132,7 +122,7 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
                 Modifier.padding(all = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = "Question: ")
+                Text(text = "${stringResource(R.string.question)}: ")
                 Text(text = clientViewModel.problem)
             }
         }
@@ -204,11 +194,10 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
             Button(onClick = {
 
                 if (!clientViewModel.mcq) {
-                    //val index = clientViewModel.answers.indexOf(selectedOption)
                     clientViewModel.answerChoice.clear()
                     clientViewModel.answerChoice.add(selectedOption)
                 }
-                Log.d("Answer", clientViewModel.answerChoice.joinToString(","))
+
                 val move = GameMove(
                     playerName = clientViewModel.playerName,
                     answer = clientViewModel.answerChoice
@@ -217,7 +206,7 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
                 val bytesPayload = Payload.fromBytes(jsonMove.encodeToByteArray())
                 clientViewModel.mConnectionsClient.sendPayload(clientViewModel.hostID, bytesPayload)
             }) {
-                Text("SEND ANSWER")
+                Text(stringResource(R.string.send_answer))
                 Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                 Icon(
                     Icons.Filled.Send,
@@ -230,7 +219,7 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
     @Composable
     fun ShowWinner(winner: String){
         Card() {
-            Text(text = "Winner: $winner", Modifier.padding(all = 16.dp))
+            Text(text = "${stringResource(R.string.winner)}: $winner", Modifier.padding(all = 16.dp))
         }
         Spacer(Modifier.height(14.dp))
     }
@@ -242,14 +231,14 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
                 clientViewModel.connectionAlert = false
             },
             title = {
-                Text(text = "Accept connection to " + clientViewModel.connectionAlertID)
+                Text(text = "${stringResource(R.string.accept_connection_to)} " + clientViewModel.connectionAlertID)
             },
             text = {
                 Text(modifier = Modifier.fillMaxWidth(),
                     text = buildAnnotatedString {
                         withStyle(style = ParagraphStyle(textAlign = TextAlign.Center)) {
 
-                            append("Confirm the code matches on both devices:\n\n")
+                            append("${stringResource(R.string.confirm_the_code_matches)}:\n\n")
 
                             withStyle(
                                 style = SpanStyle(
@@ -274,10 +263,10 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
                         modifier = Modifier.weight(1f),
                         onClick = {
                             clientViewModel.connectionAlert = false
-                            connectionsClient.acceptConnection(clientViewModel.connectionAlertID, clientViewModel.payloadCallback)
+                            connectionsClient.rejectConnection(clientViewModel.connectionAlertID)
                         }
                     ) {
-                        Text("ACCEPT", modifier = Modifier.padding(vertical = 10.dp))
+                        Text(stringResource(R.string.reject), modifier = Modifier.padding(vertical = 10.dp))
                     }
 
                     Spacer(Modifier.width(16.dp))
@@ -286,10 +275,10 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
                         modifier = Modifier.weight(1f),
                         onClick = {
                             clientViewModel.connectionAlert = false
-                            connectionsClient.rejectConnection(clientViewModel.connectionAlertID)
+                            connectionsClient.acceptConnection(clientViewModel.connectionAlertID, clientViewModel.payloadCallback)
                         }
                     ) {
-                        Text("CANCEL", modifier = Modifier.padding(vertical = 10.dp))
+                        Text(stringResource(R.string.accept), modifier = Modifier.padding(vertical = 10.dp))
                     }
                 }
             }
