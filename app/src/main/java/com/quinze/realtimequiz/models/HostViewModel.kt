@@ -1,13 +1,9 @@
 package com.quinze.realtimequiz.models
 
-import android.R
-import android.app.AlertDialog
-import android.content.DialogInterface
 import android.util.Log
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
 import com.google.gson.Gson
 import com.quinze.realtimequiz.GameMove
@@ -28,8 +24,7 @@ class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
     var answered by mutableStateOf(false)
 
     var connectionAlert by mutableStateOf(false)
-    var connectionAlertID by mutableStateOf("")
-    var connectionAlertCode by mutableStateOf("")
+    var connectionAlertInfo = mutableStateListOf<Pair<String, String>>()
 
 
 
@@ -134,8 +129,8 @@ class HostViewModel(connectionsClient: ConnectionsClient) : ViewModel(){
         object : ConnectionLifecycleCallback() {
 
             override fun onConnectionInitiated(endpointId: String, connectionInfo: ConnectionInfo) {
-                connectionAlertID = endpointId
-                connectionAlertCode = connectionInfo.authenticationDigits
+                connectionAlertInfo.add(Pair(endpointId,connectionInfo.authenticationDigits))
+                //connectionAlertCode = connectionInfo.authenticationDigits
                 connectionAlert = true
             }
 

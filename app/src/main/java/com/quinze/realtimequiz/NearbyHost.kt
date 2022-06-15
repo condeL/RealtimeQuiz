@@ -8,8 +8,10 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Cancel
-import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.outlined.Cancel
+import androidx.compose.material.icons.outlined.Done
+import androidx.compose.material.icons.outlined.TaskAlt
 import androidx.compose.runtime.*
 
 import androidx.compose.ui.Alignment
@@ -92,19 +94,27 @@ class NearbyHost() {
 
     @Composable
     fun ShowNameSelection(hostViewModel: HostViewModel){
-        Row() {
-            OutlinedTextField(
-                value = hostViewModel.hostName,
-                onValueChange = { hostViewModel.hostName = it },
-                singleLine = true,
-                label = { Text("Hostname") })
-            Button(modifier = Modifier.padding(top = 5.dp), enabled = hostViewModel.hostName.trim().isNotEmpty(), onClick = {
-                hostViewModel.startAdvertising()
-            }) {
-                Icon(
-                    Icons.Filled.Send,
-                    contentDescription = null,
-                    modifier = Modifier.padding(vertical = 10.dp))
+        Row(verticalAlignment = Alignment.Bottom) {
+            Column(modifier = Modifier.height(TextFieldDefaults.MinHeight*1.25f)) {
+                OutlinedTextField(
+                    modifier = Modifier.fillMaxHeight(),
+                    value = hostViewModel.hostName,
+                    onValueChange = { hostViewModel.hostName = it },
+                    singleLine = true,
+                    label = { Text("Hostname") })
+            }
+            Column(modifier = Modifier.height(TextFieldDefaults.MinHeight*1.1f)) {
+                Button(
+                    modifier = Modifier.fillMaxHeight(),
+                    enabled = hostViewModel.hostName.trim().isNotEmpty(),
+                    onClick = {
+                        hostViewModel.startAdvertising()
+                    }) {
+                    Icon(
+                        Icons.Filled.Send,
+                        contentDescription = null,
+                    )
+                }
             }
         }
     }
@@ -220,14 +230,12 @@ class NearbyHost() {
                             players.keys.toList(),
                             bytesPayload
                         )
-
-
                     }
                 ) {
-                    Text(text=if(hostViewModel.answering)"CANCEL QUESTION" else "SEND QUESTION")
+                    Text(text="CANCEL QUESTION")
                     Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                     Icon(
-                        imageVector = if(hostViewModel.answering) Icons.Filled.Cancel else Icons.Filled.Send,
+                        imageVector = Icons.Filled.Cancel,
                         contentDescription = null,
                         modifier = Modifier.padding(vertical = 10.dp)
                     )
@@ -272,10 +280,10 @@ class NearbyHost() {
                         }
                     }
                 ) {
-                    Text(text = if (hostViewModel.answering) "CANCEL QUESTION" else "SEND QUESTION")
+                    Text(text = "SEND QUESTION")
                     Spacer(Modifier.size(ButtonDefaults.IconSpacing))
                     Icon(
-                        imageVector = if (hostViewModel.answering) Icons.Filled.Cancel else Icons.Filled.Send,
+                        Icons.Filled.Send,
                         contentDescription = null,
                         modifier = Modifier.padding(vertical = 10.dp)
                     )
@@ -293,57 +301,130 @@ class NearbyHost() {
         AlertDialog(
             modifier = Modifier.fillMaxWidth(),
             onDismissRequest = {
-                hostViewModel.connectionAlert = false
+                //hostViewModel.connectionAlert = false
             },
             title = {
-                Text(text = "Accept connection to " + hostViewModel.connectionAlertID)
+                Text(text = "Accept connection to :")
             },
-            text = {
-                Text(modifier = Modifier.fillMaxWidth(),
-                    text = buildAnnotatedString {
-                        withStyle(style = ParagraphStyle(textAlign = TextAlign.Center)) {
+            text = null,
+            buttons = {
 
-                            append("Confirm the code matches on both devices:\n\n")
-                            withStyle(
-                                style = SpanStyle(
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colors.primary
-                                )
-                            ) {
-                                append(hostViewModel.connectionAlertCode)
+                Column(modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 16.dp)) {
+                    for (i in 0 until hostViewModel.connectionAlertInfo.size) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+
+                            Text(buildAnnotatedString {
+                                append("ID: ")
+                                withStyle(
+                                    style = SpanStyle(
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colors.primary
+                                    )
+                                ) {
+                                    append(hostViewModel.connectionAlertInfo[i].first)
+                                }
+                            })
+
+                            Text(buildAnnotatedString {
+                                append("Code: ")
+                                withStyle(
+                                    style = SpanStyle(
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colors.primary
+                                    )
+                                ) {
+                                    append(hostViewModel.connectionAlertInfo[i].second)
+                                }
+                            })
+                            Box() {
+                                Row(horizontalArrangement = Arrangement.End) {
+                                    IconButton(
+
+                                        onClick = {
+                                            connectionsClient.rejectConnection(hostViewModel.connectionAlertInfo[i].first)
+                                            hostViewModel.connectionAlertInfo.removeAt(i)
+                                            hostViewModel.connectionAlert = hostViewModel.connectionAlertInfo.isNotEmpty()
+                                        }
+                                    ) {
+                                        Icon(
+                                            Icons.Outlined.Cancel,
+                                            tint = MaterialTheme.colors.error,
+                                            contentDescription = null
+                                        )
+                                    }
+
+                                    Spacer(Modifier.width(8.dp))
+
+                                    IconButton(
+                                        onClick = {
+                                            connectionsClient.acceptConnection(
+                                                hostViewModel.connectionAlertInfo[i].first,
+                                                hostViewModel.payloadCallback
+                                            )
+                                            hostViewModel.connectionAlertInfo.removeAt(i)
+                                            hostViewModel.connectionAlert = hostViewModel.connectionAlertInfo.isNotEmpty()
+                                        }
+                                    ) {
+                                        Icon(
+                                            Icons.Outlined.TaskAlt,
+                                            tint = MaterialTheme.colors.primary,
+                                            contentDescription = null
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
-                )
-            },
-            buttons = {
+                }
+
+                Spacer(Modifier.height(8.dp))
+
                 Row(
-                    modifier = Modifier.padding(16.dp, 0.dp, 16.dp, 16.dp),
-                    horizontalArrangement = Arrangement.Center
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp, 0.dp, 16.dp, 16.dp),
+                    horizontalArrangement = Arrangement.End
                 ) {
-                    Button(
-                        modifier = Modifier.weight(1f),
+                    OutlinedButton(
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colors.error),
+                        border= BorderStroke(1.dp, MaterialTheme.colors.error),
                         onClick = {
-                            hostViewModel.connectionAlert = false
-                            connectionsClient.acceptConnection(hostViewModel.connectionAlertID, hostViewModel.payloadCallback)
-                        }
-                    ) {
-                        Text("ACCEPT", modifier = Modifier.padding(vertical = 10.dp))
-                    }
-
-                    Spacer(Modifier.width(16.dp))
-
-                    Button(
-                        modifier = Modifier.weight(1f),
-                        onClick = {
-                            hostViewModel.connectionAlert = false
-                            connectionsClient.rejectConnection(hostViewModel.connectionAlertID)
+                            for(i in 0 until hostViewModel.connectionAlertInfo.size) {
+                                connectionsClient.rejectConnection(hostViewModel.connectionAlertInfo[i].first)
+                            }
+                            hostViewModel.connectionAlertInfo.clear()
+                            hostViewModel.connectionAlert = hostViewModel.connectionAlertInfo.isNotEmpty()
                             Toast.makeText(context, "Connection refused!", Toast.LENGTH_LONG).show()
 
                         }
                     ) {
-                        Text("CANCEL", modifier = Modifier.padding(vertical = 10.dp))
+                        Text("CANCEL ALL", modifier = Modifier.padding(vertical = 8.dp))
+                        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                        Icon(Icons.Filled.Block, contentDescription = null)
+                    }
+
+                    Spacer(Modifier.width(16.dp))
+
+
+                    Button(
+                        //modifier = Modifier.weight(1f),
+                        onClick = {
+                            for(i in 0 until hostViewModel.connectionAlertInfo.size) {
+                                connectionsClient.acceptConnection(hostViewModel.connectionAlertInfo[i].first, hostViewModel.payloadCallback)
+                            }
+                            hostViewModel.connectionAlertInfo.clear()
+                            hostViewModel.connectionAlert = hostViewModel.connectionAlertInfo.isNotEmpty()
+                        }
+                    ) {
+                        Text("ACCEPT ALL", modifier = Modifier.padding(vertical = 8.dp))
+                        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                        Icon(Icons.Filled.DoneAll, contentDescription = null)
                     }
                 }
             }

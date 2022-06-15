@@ -76,19 +76,28 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
 
     @Composable
     fun ShowNameSelection(clientViewModel: ClientViewModel){
-        Row() {
-            OutlinedTextField(
-                value = clientViewModel.playerName,
-                onValueChange = { clientViewModel.playerName = it },
-                singleLine = true,
-                label = { Text("Username") })
-            Button(modifier = Modifier.padding(top = 5.dp),enabled = clientViewModel.playerName.trim().isNotEmpty(), onClick = {
-                clientViewModel.startDiscovery()
-            }) {
-                Icon(
-                    Icons.Filled.Send,
-                    contentDescription = null,
-                    modifier = Modifier.padding(vertical = 10.dp))
+        Row(verticalAlignment = Alignment.Bottom) {
+            Column(modifier = Modifier.height(TextFieldDefaults.MinHeight*1.25f)) {
+                OutlinedTextField(
+                    modifier = Modifier.fillMaxHeight(),
+                    value = clientViewModel.playerName,
+                    onValueChange = { clientViewModel.playerName = it },
+                    singleLine = true,
+                    label = { Text("Username") })
+            }
+            Column(modifier = Modifier.height(TextFieldDefaults.MinHeight*1.1f)) {
+                Button(
+                    modifier = Modifier.fillMaxHeight(),
+                    enabled = clientViewModel.playerName.trim().isNotEmpty(),
+                    onClick = {
+                        clientViewModel.startDiscovery()
+                    }) {
+                    Icon(
+                        Icons.Filled.Send,
+                        contentDescription = null,
+                        modifier = Modifier.padding(vertical = 10.dp)
+                    )
+                }
             }
         }
     }
@@ -191,7 +200,7 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
 
         Spacer(Modifier.height(28.dp))
 
-        if (!clientViewModel.answered) {
+        if (clientViewModel.answering) {
             Button(onClick = {
 
                 if (!clientViewModel.mcq) {
