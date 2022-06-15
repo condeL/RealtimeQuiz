@@ -15,8 +15,8 @@
     <string name="accept_connection_to">Accepter la connexion à</string>
     <string name="code">Code"</string>
     <string name="connection_refused">Connexion refusée !</string>
-    <string name="cancel_all">ANNULER ALL</string>
-    <string name="accept_all">ACCEPTER TOUS</string>
+    <string name="cancel_all">BLOQUER</string>
+    <string name="accept_all">ACCEPTER</string>
     <string name="username">Nom d\'utilisateur</string>
     <string name="host">Hôte</string>
     <string name="send_answer">ENVOYER RÉPONSE</string>

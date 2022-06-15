@@ -115,7 +115,7 @@ class NearbyHost() {
 
     @Composable
     fun ShowParticipants(players: Map<String, String>, winnerID: String){
-        Card() {
+        Card(modifier = Modifier.fillMaxWidth(0.66f)) {
             Column(
                 Modifier.padding(all = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -123,9 +123,8 @@ class NearbyHost() {
                 Text(text = "${stringResource(R.string.participants)}: ${players.size}")
                 players.forEach { player ->
                     val winner = player.key == winnerID
-                    Row() {
+                    Row(modifier=Modifier.fillMaxWidth().padding(horizontal=16.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
                         Text(text = player.key,  color = if (winner) Color.Green else Color.Unspecified)
-                        Spacer(Modifier.width(56.dp))
                         Text(text = player.value, color = if (winner) Color.Green else Color.Unspecified)
                     }
                 }
@@ -327,7 +326,7 @@ class NearbyHost() {
                             })
 
                             Text(buildAnnotatedString {
-                                append("${stringResource(R.string.code)}:")
+                                append("${stringResource(R.string.code)}: ")
                                 withStyle(
                                     style = SpanStyle(
                                         fontWeight = FontWeight.Bold,
@@ -383,7 +382,7 @@ class NearbyHost() {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp, 0.dp, 16.dp, 16.dp),
+                        .padding(8.dp, 0.dp, 8.dp, 16.dp),
                     horizontalArrangement = Arrangement.End
                 ) {
                     val refused = stringResource(R.string.connection_refused)
@@ -396,7 +395,7 @@ class NearbyHost() {
                             }
                             hostViewModel.connectionAlertInfo.clear()
                             hostViewModel.connectionAlert = hostViewModel.connectionAlertInfo.isNotEmpty()
-                            Toast.makeText(context, "$refused!", Toast.LENGTH_LONG).show()
+                            Toast.makeText(context, refused, Toast.LENGTH_LONG).show()
 
                         }
                     ) {
@@ -406,7 +405,6 @@ class NearbyHost() {
                     }
 
                     Spacer(Modifier.width(16.dp))
-
 
                     Button(
                         onClick = {

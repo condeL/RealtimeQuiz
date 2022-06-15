@@ -1,6 +1,7 @@
 package com.quinze.realtimequiz
 
 import android.util.Log
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -9,6 +10,8 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -228,7 +231,7 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
     fun Alert(connectionsClient: ConnectionsClient, clientViewModel: ClientViewModel){
         AlertDialog(
             onDismissRequest = {
-                clientViewModel.connectionAlert = false
+                //clientViewModel.connectionAlert = false
             },
             title = {
                 Text(text = "${stringResource(R.string.accept_connection_to)} " + clientViewModel.connectionAlertID)
@@ -259,7 +262,9 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
                     modifier = Modifier.padding(16.dp, 0.dp, 16.dp, 16.dp),
                     horizontalArrangement = Arrangement.Center
                 ) {
-                    Button(
+                    OutlinedButton(
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colors.error),
+                        border= BorderStroke(1.dp, MaterialTheme.colors.error),
                         modifier = Modifier.weight(1f),
                         onClick = {
                             clientViewModel.connectionAlert = false
@@ -267,6 +272,8 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
                         }
                     ) {
                         Text(stringResource(R.string.reject), modifier = Modifier.padding(vertical = 10.dp))
+                        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                        Icon(Icons.Filled.Block, contentDescription = null)
                     }
 
                     Spacer(Modifier.width(16.dp))
@@ -279,6 +286,8 @@ class NearbyClient(connectionsClient: ConnectionsClient) {
                         }
                     ) {
                         Text(stringResource(R.string.accept), modifier = Modifier.padding(vertical = 10.dp))
+                        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+                        Icon(Icons.Filled.Done, contentDescription = null)
                     }
                 }
             }
