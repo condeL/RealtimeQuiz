@@ -12,11 +12,6 @@
 Utilisez le fichier .apk fourni pour installer l'application.
 
 L'installation nécessite Android 8 (API 26).
-   
-![Question](./media/question.jpg?raw=true)
-![Réponse](./media/reponse.jpg?raw=true)
-![Gagnant](./media/gagnant.jpg?raw=true)
-![Gagnant2](./media/gagnant2.jpg?raw=true)
 
 ##
 
@@ -34,3 +29,9 @@ L'installation nécessite Android 8 (API 26).
 Use the provided .apk to install the application.
 
 Requires Android 8 (API 26) to install. 
+
+## Images
+<img src="./media/question.jpg" width="400" alt="Question">
+<img src="./media/reponse.png" width="400" alt="Réponse">
+<img src="./media/gagnant.png" width="400" alt="Gagnant">
+<img src="./media/gagnant2.jpg" width="400" alt="Gagnant2">
